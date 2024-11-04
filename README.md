@@ -1,107 +1,109 @@
-# MIMIC-III Length of Stay Predictor
-A deep learning system for predicting patient length of stay using sequential medical data.
+# Hospital Length of Stay Predictor
+A deep learning system that predicts patient length of stay using MIMIC-III medical data.
 
-## Slide 1: Data Loading and Preprocessing
-### The Data Pipeline
-- **Objective**: Load and prepare medical data for analysis.
-- **Data Sources**:
-  1. **CHARTEVENTS**: Contains vital signs like heart rate and blood pressure.
-  2. **LABEVENTS**: Includes lab test results such as blood tests.
-  3. **ADMISSIONS**: Details about hospital stays, including admission and discharge times.
-  4. **PATIENTS**: Demographic information like age and gender.
-- **Caching**: Saves processed data to avoid reloading large files every time, speeding up the process.
-- **Column Handling**: Automatically recognizes column names in different cases (uppercase/lowercase) to ensure flexibility.
+## Project Overview
+This project uses LSTM neural networks to predict how long a patient will remain in the hospital based on their medical data. It processes sequential medical data including vital signs and lab results to make these predictions.
 
-## Slide 2: Data Cleaning
-### Making the Data Model-Ready
-- **Timestamp Conversion**: Changes date and time strings into a format that Python can understand and manipulate.
-- **Numeric Cleaning**: Removes non-numeric characters (like '%') from data to ensure all values are numbers.
-- **Missing Values**: Uses techniques like forward and backward filling to fill in gaps in the data, ensuring no missing values disrupt the model.
-- **Normalization**: Scales features to a range between 0 and 1 using MinMaxScaler, which helps the model learn more effectively.
-- **Sequence Creation**: Groups data into sequences of 10 measurements per patient, allowing the model to learn from patterns over time.
+## Features
+- Processes MIMIC-III medical dataset
+- Uses LSTM networks for time series prediction
+- Includes data caching for faster processing
+- Provides detailed visualizations of model performance
+- Supports custom data paths and configurations
 
-## Slide 3: Target Variable
-### Time Remaining Calculation
-- **Purpose**: Calculate how many hours remain until a patient is discharged or passes away.
-- **Calculation**: For each data point, compute the difference between the discharge time and the current time, converting it to hours.
-  ```python
-  hours_remaining = (discharge_time - current_time).total_seconds() / 3600
-  ```
-- **Normalization**: Adjusts the target variable (time remaining) to have a mean of 0 and a standard deviation of 1, making it easier for the model to learn.
-  ```python
-  y_normalized = (y - mean) / std_dev
-  ```
-
-## Slide 4: Model Architecture
-### Deep LSTM Network
-- **LSTM Layers**: Long Short-Term Memory (LSTM) layers are a type of neural network layer designed to handle sequences of data, like time series.
-- **Batch Normalization**: Helps stabilize and speed up training by normalizing the output of each layer.
-- **Dropout**: Randomly ignores some neurons during training to prevent overfitting, which is when a model learns the training data too well and performs poorly on new data.
-- **Dense Layers**: Fully connected layers that help the model learn complex patterns.
-- **Output Layer**: A single neuron that predicts the time remaining.
-
-## Slide 5: Training Process
-### Smart Training Strategy
-- **Early Stopping**: Stops training when the model's performance on validation data stops improving, preventing overfitting.
-- **Model Checkpointing**: Saves the best version of the model during training, ensuring you have the best model even if training is interrupted.
-- **Adaptive Learning Rate**: Uses the Adam optimizer, which adjusts the learning rate during training for better performance.
-- **Batch Size**: Processes data in batches of 64, balancing memory usage and training speed.
-- **Validation Monitoring**: Uses validation loss to decide when to save the model and stop training.
-
-## Slide 6: Evaluation
-### Comprehensive Metrics
-- **Mean Absolute Error (MAE)**: Measures the average error in hours between predicted and actual times.
-- **Root Mean Square Error (RMSE)**: Similar to MAE but gives more weight to larger errors.
-- **R² Score**: Indicates how well the model's predictions match the actual data, with 1 being a perfect match.
-- **Visualization**: 
-  - **Training/Validation Loss Curves**: Show how the model's error changes over time.
-  - **Actual vs. Predicted Scatter Plots**: Visualize how close the model's predictions are to the actual values.
-
-## Slide 7: Usage Example
-### How to Use the Model
-```python
-# Initialize and load data
-data_loader = MIMICDataLoader(data_dir='./data')
-X, y_normalized, (y_mean, y_std) = data_loader.load_data()
-
-# Create and train model
-model = TimeToEventPredictor(input_shape=(10, n_features))
-history = model.train(X_train, y_train, X_val, y_val)
-
-# Make predictions
-predictions = model.predict(X_test) * y_std + y_mean
+## Requirements
+```bash
+pandas
+numpy
+scikit-learn
+tensorflow
+pickle-mixin
+matplotlib
 ```
-- **Data Loading**: Prepares the data for training.
-- **Model Training**: Trains the model on the data, adjusting weights to minimize error.
-- **Prediction**: Uses the trained model to predict new data, converting normalized predictions back to actual hours.
 
-## Slide 8: Key Features
-1. **Robust Data Handling**: Efficiently processes large, complex datasets.
-2. **Advanced Model Architecture**: Uses state-of-the-art techniques to handle sequential data.
-3. **Production-Ready Features**: Includes features like checkpointing and early stopping for real-world applications.
+## Project Structure
+```
+project/
+├── data/                   # Data directory (not included)
+│   ├── CHARTEVENTS.csv
+│   ├── LABEVENTS.csv
+│   ├── ADMISSIONS.csv
+│   └── PATIENTS.csv
+├── cache/                  # Cached processed data
+├── checkpoints/            # Model checkpoints
+├── data_loader.py         # Data processing module
+├── model.py               # Neural network model
+├── train.py               # Training script
+└── requirements.txt       # Project dependencies
+```
 
-## Slide 9: Future Improvements
-1. **Feature Importance Analysis**: Determine which features most influence predictions.
-2. **Uncertainty Quantification**: Measure the confidence of predictions.
-3. **Interpretability Layers**: Make the model's decisions more understandable.
-4. **Additional Metadata**: Incorporate more patient information for better predictions.
-5. **Attention Mechanisms**: Use advanced techniques to focus on important parts of the data.
+## Installation
+1. Clone the repository
+2. Install requirements:
+```bash
+pip install -r requirements.txt
+```
 
-## Getting Started
-1. **Install Requirements**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-2. **Prepare Your Data Directory**:
-   ```
-   project/
-   ├── data/
-   │   ├── CHARTEVENTS.csv
-   │   ├── LABEVENTS.csv
-   │   ├── ADMISSIONS.csv
-   │   └── PATIENTS.csv
-   ```
-3. **Run the Training**:
-   ```bash
-   python train.py
-   ```
+## Usage
+Run training with specified data path:
+```bash
+python train.py /path/to/mimic/data
+```
+
+Optional arguments:
+```bash
+python train.py /path/to/data --cache_dir ./my_cache --checkpoint_dir ./my_checkpoints
+```
+
+## Model Performance
+The model achieves:
+- MAE: ~0.2 hours on validation data
+- Best performance for stays under 1500 hours
+- Stable predictions for short to medium-term stays
+
+### Performance Visualization
+- Training metrics show consistent improvement
+- Validation curves indicate some instability
+- Prediction accuracy decreases for longer stays
+
+## Model Architecture
+```
+LSTM Network:
+- Input Layer
+- LSTM(128) + BatchNorm + Dropout(0.3)
+- LSTM(128) + BatchNorm + Dropout(0.3)
+- LSTM(64) + BatchNorm + Dropout(0.3)
+- Dense(64) + BatchNorm + Dropout(0.2)
+- Dense(32) + BatchNorm + Dropout(0.2)
+- Output Layer (1)
+```
+
+## Key Features
+1. **Data Processing**:
+   - Handles missing values
+   - Normalizes features
+   - Creates sequential data samples
+
+2. **Model Training**:
+   - Early stopping
+   - Model checkpointing
+   - Learning rate adaptation
+
+3. **Evaluation**:
+   - MAE and MSE metrics
+   - Training/validation curves
+   - Prediction visualization
+
+## Limitations
+- Decreased accuracy for stays over 1500 hours
+- Some instability in validation performance
+- Requires significant computational resources
+
+## Future Improvements
+1. Enhanced feature engineering
+2. Separate models for different length stays
+3. Additional regularization techniques
+4. Uncertainty quantification
+5. Attention mechanisms
+
+
